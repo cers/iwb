@@ -52,15 +52,18 @@ namespace iwb {
 
         CornerDetector cd;
         IplImage* diff = analysis->getCornerDiff(capturedFrame, currentFrame);
-//        if (!cd.detect(diff, &cameraUL, &cameraBR)) {
-//            printf("DEBUG: IT'S FAAAAAAAAAAAALSE YOU KNOW\n");
+        if (!cd.detect(diff, &cameraUL, &cameraBR)) {
+            printf("DEBUG: IT'S FAAAAAAAAAAAALSE YOU KNOW\n");
 //            cvSaveImage("cornercornerCAPTURED.jpg", capturedFrame);
 //            cvSaveImage("cornercornerCURRENT.jpg", currentFrame);
 //            cvSaveImage("cornercornercorner.jpg", diff);
-//            return;
-//        }
-                        cameraUL = analysis->getLocation(diff, ulImage, true);
-                        cameraBR = analysis->getLocation(diff, brImage, false);
+
+                        printf("if ul.x: %d, ul.y: %d\n", projectorUL.x, projectorUL.y);
+                        printf("if br.x: %d, br.y: %d\n", projectorBR.x, projectorBR.y);
+            return;
+        }
+//                        cameraUL = analysis->getLocation(diff, ulImage, true);
+//                        cameraBR = analysis->getLocation(diff, brImage, false);
 
         Camera *camera = Camera::getInstance();
         CvPoint po = camera->getProjectorOrigin();

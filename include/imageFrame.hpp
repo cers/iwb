@@ -46,6 +46,7 @@ namespace iwb {
         int captureState;
         int currentProcess;
         int startTime;
+        int frameCounter;
         boost::function<void (void)> captureCb;
 
         void refreshCornerCoords(IplImage* currentFrame);

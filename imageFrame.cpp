@@ -14,8 +14,9 @@ namespace iwb {
         brImage = cvLoadImage("res/CrightSmaller.jpg", 0);
 
         startTime = -1;
+        frameCounter = 0;
         currentProcess = DRAWING;
-        captureState = IDLE;
+        captureState = GETTING_CAPTURE;
 
         // initializing camera coordinates
         // FIXME: replace with actual camera coordinates
@@ -116,6 +117,7 @@ namespace iwb {
 //
 //                            isSaved = true;
                             //cvReleaseImage(&capturedFrame);
+                            cvReleaseImage(&Ci);
                         } catch (cv::Exception& e) {
 
                         }
@@ -123,18 +125,18 @@ namespace iwb {
     }
 
     void ImageFrame::setImagePath(const char* imagePath) {
-        if (captureState == IDLE && currentProcess == DRAWING) {
+        if ((captureState == GETTING_CAPTURE || captureState == WAITING_FOR_CORNERS) && currentProcess == DRAWING) {
             cvReleaseImage(&image);
             image = cvLoadImage(imagePath, CV_LOAD_IMAGE_UNCHANGED);
             currentProcess = CHANGING_IMAGE;
-            captureState = GETTING_CAPTURE;
+//            captureState = GETTING_CAPTURE;
         }
     }
 
     void ImageFrame::saveFrame() {
-        if (captureState == IDLE && currentProcess == DRAWING) {
+        if ((captureState == GETTING_CAPTURE || captureState == WAITING_FOR_CORNERS) && currentProcess == DRAWING) {
             currentProcess = SAVING_IMAGE;
-            captureState = GETTING_CAPTURE;
+//            captureState = GETTING_CAPTURE;
         }
     }
 
@@ -143,9 +145,9 @@ namespace iwb {
     }
 
     void ImageFrame::checkForMovement() {
-        if (captureState == IDLE) {
-            return;
-        }
+//        if (captureState == IDLE) {
+//            return;
+//        }
 
         IplImage* currentFrame = cvQueryFrame(cpt->getCapture());
         if (cpt->getPreviousFrame() == NULL) {
@@ -163,32 +165,78 @@ namespace iwb {
 
         if (!analysis->isMoving(diff) && (captureState == GETTING_CAPTURE || captureState == WAITING_FOR_CORNERS)) {
             printf("DEBUG: not moving\n");
-            if (startTime == -1) {
-                printf("DEBUG: clock started\n");
-                startTime = clock() / CLOCKS_PER_SEC;
-            }
-            int timeDifference;
-            timeDifference = clock() / CLOCKS_PER_SEC - startTime;
-            if (timeDifference >= 2) {
-                printf("DEBUG: clock triggered\n");
-                switch (captureState) {
+//            if (startTime == -1) {
+//                printf("DEBUG: clock started\n");
+//                startTime = clock() / CLOCKS_PER_SEC;
+//            }
+            frameCounter++;
+
+            if (frameCounter >= 2) {
+                    capturedFrame = cvCloneImage(currentFrame);
+                switch(captureState) {
                     case GETTING_CAPTURE:
-                        capturedFrame = cvCloneImage(currentFrame);
                         puts("first");
-                        startTime = -1;
+                        frameCounter = 0;
                         captureState = WAITING_FOR_CORNERS;
                         break;
                     case WAITING_FOR_CORNERS:
                         refreshCornerCoords(currentFrame);
                         puts("second");
-                        // TODO: pass the saveFrame function as a callback to the confirmation dialog for touched yes event
+                        frameCounter = 0;
                         captureState = CAPTURED;
-                        break;
                 }
             }
+//            int timeDifference;
+//            timeDifference = clock() / CLOCKS_PER_SEC - startTime;
+//            if (timeDifference >= 2) {
+//                printf("DEBUG: clock triggered\n");
+//                switch (captureState) {
+//                    case GETTING_CAPTURE:
+//                        capturedFrame = cvCloneImage(currentFrame);
+//                        puts("first");
+//                        startTime = -1;
+//                        captureState = WAITING_FOR_CORNERS;
+//                        break;
+//                    case WAITING_FOR_CORNERS:
+//                        refreshCornerCoords(currentFrame);
+//                        puts("second");
+//                        // TODO: pass the saveFrame function as a callback to the confirmation dialog for touched yes event
+//                        captureState = CAPTURED;
+//                        break;
+//                }
+//            }
         } else {
-            startTime = -1;
+            frameCounter = 0;
         }
+
+//        if (!analysis->isMoving(diff) && (captureState == GETTING_CAPTURE || captureState == WAITING_FOR_CORNERS)) {
+//            printf("DEBUG: not moving\n");
+//            if (startTime == -1) {
+//                printf("DEBUG: clock started\n");
+//                startTime = clock() / CLOCKS_PER_SEC;
+//            }
+//            int timeDifference;
+//            timeDifference = clock() / CLOCKS_PER_SEC - startTime;
+//            if (timeDifference >= 2) {
+//                printf("DEBUG: clock triggered\n");
+//                switch (captureState) {
+//                    case GETTING_CAPTURE:
+//                        capturedFrame = cvCloneImage(currentFrame);
+//                        puts("first");
+//                        startTime = -1;
+//                        captureState = WAITING_FOR_CORNERS;
+//                        break;
+//                    case WAITING_FOR_CORNERS:
+//                        refreshCornerCoords(currentFrame);
+//                        puts("second");
+//                        // TODO: pass the saveFrame function as a callback to the confirmation dialog for touched yes event
+//                        captureState = CAPTURED;
+//                        break;
+//                }
+//            }
+//        } else {
+//            startTime = -1;
+//        }
 
         cvReleaseImage(&diff);
     }
@@ -198,13 +246,14 @@ namespace iwb {
         printf("DEBUG: imageFrame current process: %d\n", currentProcess);
         printf("DEBUG: imageFrame capture state: %d\n", captureState);
 
+        checkForMovement();
         switch (currentProcess) {
             case DRAWING:
                 break;
             case CHANGING_IMAGE:
                 checkForMovement();
                 if (captureState == CAPTURED) {
-                    captureState = IDLE;
+
                     currentProcess = DRAWING;
                 }
                 break;
@@ -216,18 +265,17 @@ namespace iwb {
                     char filepath[80];
                     sprintf(filepath, "tmp/1/capture_%d.jpg", (int)clock());
                     cpt->saveFrame(filepath, capturedFrame);
-                            cvReleaseImage(&Ci);
                             if (captureCb != NULL) {
                                 captureCb();
                             }
-                    
-                    captureState = IDLE;
+
                     currentProcess = DRAWING;
                 }
                 break;
         }
 
         if (captureState == CAPTURED) {
+            captureState = WAITING_FOR_CORNERS;
             startTime = -1;
             cvReleaseImage(&capturedFrame);
             capturedFrame = NULL;
@@ -238,7 +286,7 @@ namespace iwb {
         if (currentProcess == DRAWING || currentProcess == SAVING_IMAGE) {
 //            prs->putImage(projectorUL, projectorBR, image);
             prs->putImage(projectorUL, projectorBR, NULL, NULL, image);
-            prs->applyBuffer();
+//            prs->applyBuffer();
         }
     }
 }

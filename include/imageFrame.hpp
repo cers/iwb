@@ -20,6 +20,7 @@
 #include "capture.hpp"
 #include "analysis.hpp"
 #include "presentation.hpp"
+#include <boost/function.hpp>
 
 namespace iwb {
     class ImageFrame : public Drawable {
@@ -31,6 +32,8 @@ namespace iwb {
         void checkForCapture();
         virtual void draw(Presentation* prs);
         void saveFrame();
+        void setCaptureCallback(boost::function<void (void)> captureCb);
+        void captureFrame(IplImage* currentFrame);
     private:
         Capture* cpt;
         Analysis* analysis;
@@ -43,9 +46,9 @@ namespace iwb {
         int captureState;
         int currentProcess;
         int startTime;
+        boost::function<void (void)> captureCb;
 
         void refreshCornerCoords(IplImage* currentFrame);
-        void captureFrame(IplImage* currentFrame);
         void checkForMovement();
     };
 }

@@ -42,22 +42,24 @@ namespace iwb {
         imageFrame->saveFrame();
         prs->addComponent(imageFrame);
         scroller = new Scroller(prs, hndl, imageFrame);
+
+        scroller->reloadFileNames();
 //        Confirmation::create(prs, hndl);
 
         return 0;
     }
 
     int Application::run() {
-    int i;
+    int i = 0;
     int camWidth = Camera::getInstance()->getWidth();
     int camHeight = Camera::getInstance()->getHeight();
         IplImage *cf = cvCreateImage(cvSize(camWidth, camHeight), IPL_DEPTH_8U, 3);
         IplImage *diff = cvCreateImage(cvSize(camWidth, camHeight), IPL_DEPTH_8U, 3);
         IplImage *gs = NULL;
-        cpt->saveFrame("bgcapt.jpg", cf);
+//        cpt->saveFrame("bgcapt.jpg", cf);
 //        cvWaitKey(5000);
         cf = cvQueryFrame(cpt->getCapture());
-        cpt->saveFrame("bgcapt2.jpg", cf);
+//        cpt->saveFrame("bgcapt2.jpg", cf);
 
 //        const char* winFrame = "winFrame";
 //        cvNamedWindow(winFrame, CV_WINDOW_AUTOSIZE);
@@ -69,12 +71,15 @@ namespace iwb {
         IplImage* current;
         IplImage* movementDiff;
 
-        int threshold = 1;
+//        int threshold = 1;
         bool backgroundChanged = false;
         while(true) {
             current = cvCloneImage(cvQueryFrame(cpt->getCapture()));
+            if (i++ == 30) {
+                imageFrame->captureFrame(current);
+            }
             movementDiff = analysis->getCornerDiff(previous, current);
-            cvSaveImage("movementDiff.jpg", movementDiff);
+//            cvSaveImage("movementDiff.jpg", movementDiff);
 //            int c = 0;
 //            for (int x=0; x<movementDiff->width && !backgroundChanged; x++)
 //            for (int y=0; y<movementDiff->height && !backgroundChanged; y++) {

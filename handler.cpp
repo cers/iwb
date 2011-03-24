@@ -74,7 +74,7 @@ namespace iwb {
         return true;
     }
 	void Handler::detectTouchedComponents(IplImage *mask) {
-            cvSaveImage("mask.jpg", mask);
+//            cvSaveImage("mask.jpg", mask);
 	    for (std::list<Touchable*>::iterator component = components.begin(); component != components.end(); component++) {
                 (*component)->detectTouch(mask);
             }

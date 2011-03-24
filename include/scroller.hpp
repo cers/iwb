@@ -63,6 +63,7 @@ namespace iwb {
          * Files are accessible from imgArray field
          */
         int loadFileNames();
+        void reloadFileNames();
         
         void shiftRight();
         void shiftLeft();

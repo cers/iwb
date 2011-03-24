@@ -58,7 +58,7 @@ namespace iwb {
                     }
                     if (this->interaction > INTERACTION_TRIGGER) {
                         printf("DETECTED TOUCH!\n");
-                        cvSaveImage("touchedMask.jpg", mask);
+//                        cvSaveImage("touchedMask.jpg", mask);
                         if (this->action != NULL)
                             this->action();
                         this->interaction = 0;

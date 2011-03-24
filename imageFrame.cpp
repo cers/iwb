@@ -8,6 +8,7 @@ namespace iwb {
     ImageFrame::ImageFrame(Capture* cpt, Presentation* prs, Analysis* analysis) : Drawable("res/bg.jpg", prs, cvPoint(100, 300), cvPoint(924, 768)) {
         this->cpt = cpt;
         this->analysis = analysis;
+        this->captureCb = NULL;
 
         ulImage = cvLoadImage("res/CleftSmaller.jpg", 0);
         brImage = cvLoadImage("res/CrightSmaller.jpg", 0);
@@ -19,12 +20,16 @@ namespace iwb {
         // initializing camera coordinates
         // FIXME: replace with actual camera coordinates
         cameraUL = cvPoint(0, 0);
-        cameraBR = cvPoint(1024, 768);
+        cameraBR = cvPoint(640, 480);
 //        refreshCornerCoords(time);
 
 //        IplImage* currentFrame = cpt->getCapture();
 //                    p1 = Analysis::getLocation(Analysis::getDiff(cornerFrame, currentFrame), tmp1, true);
 //                    p2 = Analysis::getLocation(Analysis::getDiff(cornerFrame, currentFrame), tmp2, false);
+    }
+
+    void ImageFrame::setCaptureCallback(boost::function<void (void)> captureCb) {
+        this->captureCb = captureCb;
     }
 
     void ImageFrame::refreshCornerCoords(IplImage* currentFrame) {
@@ -77,7 +82,7 @@ namespace iwb {
         //printf("(%d, %d)", x,y);
 //        return cvPoint(x,y);
 //                        cvRectangle(diff, projectorUL, projectorBR, cvScalar(0, 0, 255, 0), 1, 0, 0);
-        cpt->saveFrame("cornerDiff.jpg", diff);
+//        cpt->saveFrame("cornerDiff.jpg", diff);
 
                         printf("if ul.x: %d, ul.y: %d\n", projectorUL.x, projectorUL.y);
                         printf("if br.x: %d, br.y: %d\n", projectorBR.x, projectorBR.y);
@@ -110,17 +115,16 @@ namespace iwb {
 //                            //currentKfSaved = true;
 //
 //                            isSaved = true;
-                            cvReleaseImage(&Ci);
                             //cvReleaseImage(&capturedFrame);
                         } catch (cv::Exception& e) {
 
                         }
+
     }
 
     void ImageFrame::setImagePath(const char* imagePath) {
         if (captureState == IDLE && currentProcess == DRAWING) {
             cvReleaseImage(&image);
-            printf(">>>>>>>>>>>> %s\n", imagePath);
             image = cvLoadImage(imagePath, CV_LOAD_IMAGE_UNCHANGED);
             currentProcess = CHANGING_IMAGE;
             captureState = GETTING_CAPTURE;
@@ -208,7 +212,14 @@ namespace iwb {
                 checkForMovement();
                 if (captureState == CAPTURED) {
                     captureFrame(cpt->getPreviousFrame());
-                    cpt->saveFrame("CapturedImage.jpg", capturedFrame);
+                    
+                    char filepath[80];
+                    sprintf(filepath, "tmp/1/capture_%d.jpg", (int)clock());
+                    cpt->saveFrame(filepath, capturedFrame);
+                            cvReleaseImage(&Ci);
+                            if (captureCb != NULL) {
+                                captureCb();
+                            }
                     
                     captureState = IDLE;
                     currentProcess = DRAWING;

@@ -83,7 +83,17 @@ namespace iwb {
             /* could not open directory */
             return EXIT_FAILURE;
         }
+
         return 0;
+    }
+
+    void Scroller::reloadFileNames() {
+        int lastImage = currentImg;
+        loadFileNames();
+        displayImages();
+        currentImg = lastImage;
+
+        printf("DEBUG: @@@@@@@@@ scroller images RELOADED\n");
     }
 
 	void testcb() {
@@ -184,6 +194,8 @@ namespace iwb {
         buttons[RIGHT_IMAGE] = new Touchable(filepath, prs, hndl, projectorUL[RIGHT_IMAGE], projectorBR[RIGHT_IMAGE], boost::bind(&iwb::Scroller::handleRightImageTouch, this));
 
         displayImages();
+
+        imageFrame->setCaptureCallback(boost::bind(&iwb::Scroller::reloadFileNames, this));
         
     }
 
